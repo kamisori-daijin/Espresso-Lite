@@ -67,9 +67,6 @@ docs/*
 !docs/gpt2-926-tokens-per-second.html
 !docs/reverse-engineering-apple-neural-engine.html
 prompts/
-scripts/
-!scripts/
-scripts/*
 scripts/internal/
 scripts/internal/**
 !scripts/ensure_coreml_model.sh
@@ -89,6 +86,7 @@ scripts/internal/**
 !scripts/tests/test_stories_model_identity.py
 !scripts/tests/test_espresso_llama_weights.py
 !scripts/README.md
+model_keys.txt
 tasks/
 AGENTS.md
 CLAUDE.md
@@ -107,3 +105,5 @@ training/
 # Tooling version pins
 .swift-version
 _reference/
+
+.venv
