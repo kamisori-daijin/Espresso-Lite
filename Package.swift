@@ -5,8 +5,6 @@ let package = Package(
     name: "Espresso",
     platforms: [.macOS(.v26)],
     products: [
-        .executable(name: "espresso-train", targets: ["EspressoTrain"]),
-        .executable(name: "espresso-bench", targets: ["EspressoBench"]),
         .executable(name: "espresso-generate", targets: ["EspressoGenerate"]),
         .executable(name: "espresso-multitoken-probe", targets: ["EspressoMultitokenProbe"]),
         .executable(name: "espc", targets: ["ESPCompilerCLI"]),
@@ -16,12 +14,8 @@ let package = Package(
         .library(name: "ESPCompiler", targets: ["ESPCompiler"]),
         .library(name: "ESPRuntime", targets: ["ESPRuntime"]),
         .library(name: "ESPConvert", targets: ["ESPConvert"]),
-        .library(name: "ESPBenchSupport", targets: ["ESPBenchSupport"]),
         .library(name: "ModelSupport", targets: ["ModelSupport"]),
         .library(name: "RealModelInference", targets: ["RealModelInference"]),
-    ],
-    dependencies: [
-        .package(path: "../Edgerunner"),
     ],
     targets: [
         .target(
@@ -76,23 +70,6 @@ let package = Package(
                 .linkedFramework("CoreML"),
                 .linkedFramework("IOSurface"),
                 .linkedFramework("Metal"),
-            ]
-        ),
-        .executableTarget(
-            name: "EspressoTrain",
-            dependencies: ["Espresso"],
-            path: "Sources/EspressoTrain",
-            swiftSettings: [.swiftLanguageMode(.v6)]
-        ),
-        .executableTarget(
-            name: "EspressoBench",
-            dependencies: ["Espresso", "ANERuntime", "ANETypes", "CPUOps", "MILGenerator"],
-            path: "Sources/EspressoBench",
-            swiftSettings: [.swiftLanguageMode(.v6)],
-            linkerSettings: [
-                .linkedFramework("Accelerate"),
-                .linkedFramework("IOSurface"),
-                .linkedFramework("CoreML"),
             ]
         ),
         .executableTarget(
@@ -180,13 +157,6 @@ let package = Package(
             path: "Sources/DeltaCompilation",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
-        .target(
-            name: "LoRAAdapter",
-            dependencies: ["ANEGraphIR", "ANEBuilder", "ANETypes"],
-            path: "Sources/LoRAAdapter",
-            swiftSettings: [.swiftLanguageMode(.v6)],
-            linkerSettings: [.linkedFramework("IOSurface")]
-        ),
         .testTarget(
             name: "ANEBuilderTests",
             dependencies: ["ANEBuilder", "ANEGraphIR"],
@@ -211,12 +181,7 @@ let package = Package(
             path: "Tests/DeltaCompilationTests",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
-        .testTarget(
-            name: "LoRAAdapterTests",
-            dependencies: ["LoRAAdapter", "ANEGraphIR"],
-            path: "Tests/LoRAAdapterTests",
-            swiftSettings: [.swiftLanguageMode(.v6)]
-        ),
+        
         .testTarget(
             name: "MigrationParityTests",
             dependencies: ["MILGenerator", "ANETypes", "ANEGraphIR", "ANEBuilder", "ANECodegen", "ANEPasses"],
@@ -254,28 +219,6 @@ let package = Package(
                 .product(name: "EdgeRunner", package: "Edgerunner"),
             ],
             path: "Tests/RealModelInferenceTests",
-            swiftSettings: [.swiftLanguageMode(.v6)]
-        ),
-        .target(
-            name: "EspressoGGUF",
-            dependencies: [
-                "RealModelInference", "ModelSupport", "ANETypes",
-                .product(name: "EdgeRunner", package: "Edgerunner"),
-                .product(name: "EspressoEdgeRunner", package: "Edgerunner"),
-            ],
-            path: "Sources/EspressoGGUF",
-            swiftSettings: [.swiftLanguageMode(.v6)]
-        ),
-        .testTarget(
-            name: "EspressoGGUFTests",
-            dependencies: ["EspressoGGUF", "ModelSupport", "ANETypes"],
-            path: "Tests/EspressoGGUFTests",
-            swiftSettings: [.swiftLanguageMode(.v6)]
-        ),
-        .executableTarget(
-            name: "EspressoGGUFRunner",
-            dependencies: ["EspressoGGUF", "RealModelInference", "ModelSupport"],
-            path: "Sources/EspressoGGUFRunner",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .target(
@@ -331,18 +274,6 @@ let package = Package(
             name: "ESPConvertTests",
             dependencies: ["ESPConvert", "ESPBundle", "ESPCompiler"],
             path: "Tests/ESPConvertTests",
-            swiftSettings: [.swiftLanguageMode(.v6)]
-        ),
-        .target(
-            name: "ESPBenchSupport",
-            dependencies: ["ESPBundle"],
-            path: "Sources/ESPBenchSupport",
-            swiftSettings: [.swiftLanguageMode(.v6)]
-        ),
-        .testTarget(
-            name: "ESPBenchSupportTests",
-            dependencies: ["ESPBenchSupport", "ESPBundle"],
-            path: "Tests/ESPBenchSupportTests",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .executableTarget(
