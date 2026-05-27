@@ -201,24 +201,14 @@ let package = Package(
         ),
         .executableTarget(
             name: "EspressoGenerate",
-            dependencies: ["RealModelInference", "ModelSupport", "ANETypes", "ANERuntime", "ESPRuntime", "ESPBenchSupport"],
+            dependencies: ["RealModelInference", "ModelSupport", "ANETypes", "ANERuntime", "ESPRuntime"],
             path: "Sources/EspressoGenerate",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(
             name: "EspressoGenerateTests",
-            dependencies: ["EspressoGenerate", "ModelSupport", "ANETypes", "ESPBundle", "ESPBenchSupport"],
+            dependencies: ["EspressoGenerate", "ModelSupport", "ANETypes", "ESPBundle"],
             path: "Tests/EspressoGenerateTests",
-            swiftSettings: [.swiftLanguageMode(.v6)]
-        ),
-        .testTarget(
-            name: "RealModelInferenceTests",
-            dependencies: [
-                "RealModelInference", "ModelSupport", "ANEGraphIR", "ANETypes", "Espresso", "EspressoGGUF",
-                .product(name: "EspressoEdgeRunner", package: "Edgerunner"),
-                .product(name: "EdgeRunner", package: "Edgerunner"),
-            ],
-            path: "Tests/RealModelInferenceTests",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .target(

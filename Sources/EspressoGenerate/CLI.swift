@@ -2,7 +2,6 @@ import Foundation
 import Darwin
 import ANERuntime
 import ANETypes
-import ESPBenchSupport
 import ESPRuntime
 import ModelSupport
 import RealModelInference
@@ -1587,8 +1586,6 @@ private func writeCompareArtifacts(report: CompareReport, defaults: DemoDefaults
     let coreMLLatenciesURL = outputDir.appendingPathComponent("coreml_token_latencies.csv")
     let espressoFingerprintURL = outputDir.appendingPathComponent("espresso-benchmark-fingerprint.json")
     let coreMLFingerprintURL = outputDir.appendingPathComponent("coreml-benchmark-fingerprint.json")
-    let espressoFingerprint = benchmarkFingerprint(for: report.espresso)
-    let coreMLFingerprint = benchmarkFingerprint(for: report.coreML)
 
     let payload: [String: Any] = [
         "model": report.model,
@@ -1601,10 +1598,6 @@ private func writeCompareArtifacts(report: CompareReport, defaults: DemoDefaults
         "coreml_sequence_length": report.coreMLSequenceLength,
         "espresso": backendPayload(report.espresso),
         "coreml": backendPayload(report.coreML),
-        "benchmark_fingerprints": [
-            "espresso": benchmarkFingerprintPayload(espressoFingerprint),
-            "coreml": benchmarkFingerprintPayload(coreMLFingerprint),
-        ],
         "power": [
             "espresso": powerPayload(report.espressoPower),
             "coreml": powerPayload(report.coreMLPower),
@@ -1639,8 +1632,6 @@ private func writeCompareArtifacts(report: CompareReport, defaults: DemoDefaults
 
     try writeLatencyCSV(latencies: report.espresso.tokenLatenciesMs, to: espressoLatenciesURL)
     try writeLatencyCSV(latencies: report.coreML.tokenLatenciesMs, to: coreMLLatenciesURL)
-    try writeBenchmarkFingerprint(espressoFingerprint, to: espressoFingerprintURL)
-    try writeBenchmarkFingerprint(coreMLFingerprint, to: coreMLFingerprintURL)
     return outputDir.path
 }
 
@@ -1661,12 +1652,11 @@ private func writeGenerateArtifacts(
     ).standardizedFileURL
     try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
 
-    let fingerprint = benchmarkFingerprint(for: result)
+    
     let payload: [String: Any] = [
         "model": invocation.config.name,
         "bundle": invocation.bundlePath ?? NSNull(),
         "backend": backendPayload(result),
-        "benchmark_fingerprint": benchmarkFingerprintPayload(fingerprint),
         "reports_root": defaults.reportsRoot.path,
     ]
     let jsonData = try JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys])
@@ -1675,15 +1665,10 @@ private func writeGenerateArtifacts(
         latencies: result.tokenLatenciesMs,
         to: outputDir.appendingPathComponent("espresso_token_latencies.csv")
     )
-    try writeBenchmarkFingerprint(
-        fingerprint,
-        to: outputDir.appendingPathComponent("benchmark-fingerprint.json")
-    )
     return outputDir.path
 }
 
 private func backendPayload(_ backend: BackendRunMetrics) -> [String: Any] {
-    let fingerprint = benchmarkFingerprint(for: backend)
     return [
         "compile_time_ms": backend.compileTimeMs,
         "compile_retry_count": backend.compileRetryCount,
@@ -1696,7 +1681,6 @@ private func backendPayload(_ backend: BackendRunMetrics) -> [String: Any] {
         "generated_tokens": backend.generatedTokens.map(Int.init),
         "token_latencies_ms": backend.tokenLatenciesMs,
         "text": backend.text,
-        "benchmark_fingerprint": benchmarkFingerprintPayload(fingerprint),
         "compile_breakdown": backend.compileBreakdown?.mapValues { stats in
             [
                 "attempt_count": stats.attemptCount,
@@ -1710,12 +1694,7 @@ private func backendPayload(_ backend: BackendRunMetrics) -> [String: Any] {
     ]
 }
 
-private func writeBenchmarkFingerprint(_ fingerprint: ESPBenchmarkFingerprint, to url: URL) throws {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    let payload = benchmarkFingerprintPayload(fingerprint)
-    try encoder.encode(payload).write(to: url)
-}
+
 
 private func powerPayload(_ power: PowerSummary?) -> [String: Any] {
     guard let power else {
@@ -2227,26 +2206,7 @@ private func compileCacheHitRate(for backend: BackendRunMetrics) -> Double {
     backend.compileTimeMs > 0 ? 0.0 : 1.0
 }
 
-func benchmarkFingerprint(for backend: BackendRunMetrics) -> ESPBenchmarkFingerprint {
-    ESPBenchmarkFingerprint(metrics: [
-        .ttftMilliseconds: backend.firstTokenLatencyMs,
-        .tokensPerSecond: backend.tokensPerSecond,
-        .coldLoadMilliseconds: backend.compileTimeMs + backend.firstTokenLatencyMs,
-        .warmLoadMilliseconds: backend.firstTokenLatencyMs,
-        .compileCacheHitRate: compileCacheHitRate(for: backend),
-        .peakResidentMemoryBytes: Double(currentResidentMemoryBytes()),
-    ])
-}
 
-private func benchmarkFingerprintPayload(_ fingerprint: ESPBenchmarkFingerprint) -> [String: Double] {
-    var payload: [String: Double] = [:]
-    for metric in ESPBenchmarkMetric.allCases {
-        if let value = fingerprint.metrics[metric] {
-            payload[metric.rawValue] = value
-        }
-    }
-    return payload
-}
 
 private func runGenerate(invocation: ResolvedInvocation) throws -> BackendRunMetrics {
     if invocation.benchmarkGenerate {
